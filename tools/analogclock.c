@@ -54,19 +54,22 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
     HPEN        hPen, hOldPen;
     HBRUSH      hBrush;
 
-	switch (uMsg) {
-	case WM_CREATE:
-		return 0;
+    switch (uMsg) {
+    case WM_CREATE:
+      return 0;
 
-	case WM_PAINT:
+    case WM_PAINT:
 //        dprintf("-----------SelectObjectA\n");
-        hDC = BeginPaint(hWnd, &pPaint);
+      hDC = BeginPaint(hWnd, &pPaint);
 //        SelectObject( hDC, GetStockObject(WHITE_PEN) );
 //        dprintf("-----------SelectObject0 %08lx\n", hDC);
-        hPen = CreatePen(PS_DOT, 0x44, RGB(0x33, 0x22, 0x11));
-        hBrush = CreateSolidBrush(RGB(0x55, 0x66, 0x77));
-        SelectObject(hDC, hBrush);
-        SelectObject(hDC, hPen);
+      hPen = CreatePen(PS_DASHDOTDOT, 0x1, RGB(0x33, 0x22, 0x11));
+      hBrush = CreateSolidBrush(RGB(0x55, 0x66, 0x77));
+      SelectObject(hDC, hBrush);
+      SelectObject(hDC, hPen);
+      printf("HDC : %08X\n", hPen);
+      MoveToEx(hDC, 0, 0, NULL);
+      LineTo(hDC, 100, 100);
 //        dprintf("-----------SelectObject1\n");
 //        hOldPen = SelectObject(hDC, GetStockObject(WHITE_PEN));
 //        dprintf("-----------SelectObject1\n");
@@ -80,25 +83,11 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
         {
             int count;
             for (count = 0; count < 32; count++) {
-                dprintf(" C : %02X\n", ptr[count]);
-            }
-        }
 */
-/*
-        SetBkColor(hDC, RGB(0x11, 0x22, 0x33));
-        SetTextColor(hDC, RGB(0x44, 0x55, 0x66));
-*/
-        MoveToEx( hDC, 0, 0, NULL );
-        LineTo( hDC, 100, 100 );
-        Rectangle( hDC, 200, 200, 300, 300 );
-//        SelectObject(hDC, hOldPen);
-        EndPaint(hWnd, &pPaint);
-        DeleteObject(hPen);
-        DeleteObject(hBrush);
-        return 0;
-	}
+      break;
+    }
 
-	return DefWindowProc(hWnd, uMsg, wParam, lParam);
+    return DefWindowProc(hWnd, uMsg, wParam, lParam);
 }
 
 // this is required when we're replacing winlogon

@@ -413,7 +413,7 @@ HGDIOBJ alloc_gdi_handle( BOOL stock, ULONG type, void *user_info, gdi_object_t*
 
 	gdi_handle_table_entry *table = (gdi_handle_table_entry*) gdi_handle_table;
 	table[index].ProcessId = current->process->id;
-	table[index].Type = type;
+	table[index].Type = type & 0x1f;
 	HGDIOBJ handle = makeHGDIOBJ(0,stock,type,index);
         table[index].Count = 0;
 	table[index].Upper = (ULONG)handle >> 16;
@@ -781,13 +781,16 @@ HANDLE pen_t::alloc( UINT style, UINT width, COLORREF color, BOOL stock )
 
 pen_t* pen_from_handle( HGDIOBJ handle )
 {
+  unsigned short objtype;
+
   gdi_handle_table_entry *entry = get_handle_table_entry( handle );
   if (!entry) 
     return NULL;
 
-  if (entry->Type != GDI_OBJECT_PEN)
-    return NULL;
+  objtype = (((unsigned int)handle) & 0x7f0000) >> 16;
 
+  if (objtype != GDI_OBJECT_PEN && entry->Type != (GDI_OBJECT_PEN & 0x1f))
+    return NULL;
 
   gdi_object_t* obj = reinterpret_cast<gdi_object_t*>( entry->kernel_info );
   return static_cast<pen_t*>( obj );
@@ -806,6 +809,43 @@ pen_t* device_context_t::get_selected_pen()
   GDI_DEVICE_CONTEXT_SHARED *dcshm = get_dc_shared_mem();
   if (!dcshm)
     return NULL;
+
+  {
+    unsigned int *ptr = (unsigned int *) dcshm;
+    dprintf("%08lx\n", ptr[0]);
+    dprintf("%08lx\n", ptr[1]);
+    dprintf("%08lx\n", ptr[2]);
+    dprintf("%08lx\n", ptr[3]);
+    dprintf("%08lx\n", ptr[4]);
+    dprintf("%08lx\n", ptr[5]);
+    dprintf("%08lx\n", ptr[6]);
+    dprintf("%08lx\n", ptr[7]);
+#if 0
+    char buf[128]; unsigned char v;
+    int count = 0;
+    for (count = 0; count < 456; count++) {
+      memset(buf, 0, 128);
+      // sprintf(buf + (count % 16) * 3, "%02X ", ptr[count]);
+      v = ptr[count] & 0x0F;
+      if (v >= 0 && v <= 9) {
+	buf[(count % 16) * 3 + 0] = v + '0';
+      } else {
+	buf[(count % 16) * 3 + 0] = v + 'A' - 10;
+      }
+      v = (ptr[count] >> 4) & 0x0F;
+      if (v >= 0 && v <= 9) {
+	buf[(count % 16) * 3 + 1] = v + '0';
+      } else {
+	buf[(count % 16) * 3 + 1] = v + 'A' - 10;
+      }
+      buf[(count % 16) * 3 + 2] = v + 'A' - 10;
+      if ((count % 16) == 15) {
+	dprintf("%d %d %d %d\n", buf[0], buf[1], buf[2], buf[3]);
+	dprintf("%d %d %d %d\n", ptr[0], ptr[1], ptr[2], ptr[3]);
+      }
+    }
+#endif
+  }
 
   return pen_from_handle( dcshm->Pen );;
 }
