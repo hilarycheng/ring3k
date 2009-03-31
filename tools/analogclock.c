@@ -23,10 +23,7 @@
 #include <windows.h>
 #include <stdio.h>
 #include <time.h>
-
-#ifndef MONITOR_DEFAULTTONEAREST
-#define MONITOR_DEFAULTTONEAREST    0x00000002
-#endif
+#include <math.h>
 
 #define WINE_TRACE dprintf
 
@@ -47,44 +44,81 @@ void dprintf( const char *format, ... )
 	OutputDebugString( str );
 }
 
+#define PI 3.14159265
+
 LRESULT CALLBACK WndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 {
     PAINTSTRUCT pPaint;
     HDC         hDC;
     HPEN        hPen, hOldPen;
     HBRUSH      hBrush;
+    float       rad, x0, y0, x1, y1;
 
     switch (uMsg) {
     case WM_CREATE:
+      SetTimer(hWnd, 1000, 1000, NULL);
       return 0;
 
     case WM_PAINT:
-//        dprintf("-----------SelectObjectA\n");
       hDC = BeginPaint(hWnd, &pPaint);
-//        SelectObject( hDC, GetStockObject(WHITE_PEN) );
-//        dprintf("-----------SelectObject0 %08lx\n", hDC);
-      hPen = CreatePen(PS_DASHDOTDOT, 0x1, RGB(0x33, 0x22, 0x11));
-      hBrush = CreateSolidBrush(RGB(0x55, 0x66, 0x77));
-      SelectObject(hDC, hBrush);
-      SelectObject(hDC, hPen);
-      printf("HDC : %08X\n", hPen);
-      MoveToEx(hDC, 0, 0, NULL);
-      LineTo(hDC, 100, 100);
-//        dprintf("-----------SelectObject1\n");
-//        hOldPen = SelectObject(hDC, GetStockObject(WHITE_PEN));
-//        dprintf("-----------SelectObject1\n");
-//        dprintf("-----------SelectObject2\n");
-//        SelectObject(hDC, GetStockObject(BLACK_BRUSH));
-//        dprintf(" HPEN : %08X %08X\n", hPen, hDC);
-//        DWORD p = *((DWORD *) hDC);
-//        dprintf(" DC   : %08X\n", p);
-/*
-        UCHAR *ptr = (UCHAR *) p;
-        {
-            int count;
-            for (count = 0; count < 32; count++) {
-*/
+
+      hPen    = CreatePen(PS_DOT, 2, RGB(0, 255, 0));
+      hOldPen = SelectObject(hDC, hPen);
+      for (rad = 0; rad < 2 * PI; rad += (2 * PI) / 60) {
+	x0 = sin(rad) * 100 + 200;
+	y0 = cos(rad) * 100 + 200;
+
+	x1 = sin(rad) * 90 + 200;
+	y1 = cos(rad) * 90 + 200;
+
+	MoveToEx(hDC, x0, y0, NULL);
+	LineTo(hDC, x1, y1);
+      }
+      SelectObject(hDC, hOldPen);
+      DeleteObject(hPen);
+
+      hPen    = CreatePen(PS_DOT, 2, RGB(255, 0, 0));
+      hOldPen = SelectObject(hDC, hPen);
+      for (rad = 0; rad < 2 * PI; rad += (2 * PI) / 12) {
+	x0 = sin(rad) * 100 + 200;
+	y0 = cos(rad) * 100 + 200;
+
+	x1 = sin(rad) * 80 + 200;
+	y1 = cos(rad) * 80 + 200;
+
+	MoveToEx(hDC, x0, y0, NULL);
+	LineTo(hDC, x1, y1);
+      }
+      SelectObject(hDC, hOldPen);
+      DeleteObject(hPen);
+
+      hPen    = CreatePen(PS_DOT, 5, RGB(0, 0, 0));
+      hOldPen = SelectObject(hDC, hPen);
+
+      x1 = sin(((2.0 * PI) / 12.0) * 3.0) * 70 + 200;
+      y1 = cos(((2.0 * PI) / 12.0) * 3.0) * 70 + 200;
+      MoveToEx( hDC, 200, 200, NULL );
+      LineTo( hDC, x1, y1 );
+
+      x1 = sin(((2.0 * PI) / 12.0) * 5.0) * 50 + 200;
+      y1 = cos(((2.0 * PI) / 12.0) * 5.0) * 50 + 200;
+      MoveToEx( hDC, 200, 200, NULL );
+      LineTo( hDC, x1, y1 );
+
+      SelectObject(hDC, hOldPen);
+      DeleteObject(hPen);
+
+      EndPaint( hWnd, &pPaint );
+
       break;
+
+    case WM_TIMER:
+      {
+	// dprintf(" WM Timer \n");
+	SYSTEMTIME local;
+	GetLocalTime( &local );
+      }
+      return 0;
     }
 
     return DefWindowProc(hWnd, uMsg, wParam, lParam);

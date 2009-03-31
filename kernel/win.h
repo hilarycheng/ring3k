@@ -71,6 +71,7 @@ public:
 	BOOLEAN show( INT Show );
 	void activate();
 	HGDIOBJ get_dc();
+	device_context_t *get_device_context(void);
 	BOOLEAN destroy();
 	void set_window_pos( UINT flags );
 	static window_tt* find_window_to_repaint( HWND window, thread_t* thread );
@@ -79,6 +80,10 @@ public:
 	void unlink_window();
 	BOOLEAN move_window( int x, int y, int width, int height, BOOLEAN repaint );
 	HWND from_point( POINT& pt );
+
+private:
+	device_context_t *win_dc;
+	void create_dc(void);
 };
 
 window_tt *window_from_handle( HANDLE handle );

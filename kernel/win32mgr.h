@@ -66,6 +66,8 @@ public:
 	ULONG get_async_key_state( ULONG Key );
 	virtual int getcaps( int index ) = 0;
         virtual BOOL lineto( INT x1, INT y1, INT x2, INT y2, pen_t *pen ) = 0;
+	virtual BOOL ellipse( INT Left, INT Top, INT Right, INT Bottom, pen_t *pen, brush_t *brush ) = 0;
+	virtual void repaint( void ) = 0;
 };
 
 extern win32k_manager_t* win32k_manager;
@@ -134,6 +136,9 @@ class pen_t : public gdi_object_t
 	COLORREF color;
 public:
 	pen_t( UINT style, UINT width, COLORREF color );
+	COLORREF get_color() { return color; }
+	ULONG get_style() { return style; }
+	ULONG get_width() { return width; }
 	static HANDLE alloc( UINT style, UINT width, COLORREF color, BOOL stock = FALSE );
 };
 
@@ -213,6 +218,8 @@ public:
 	virtual int getcaps( int index ) = 0;
 	virtual BOOL stretch_di_bits( stretch_di_bits_args& args );
         virtual BOOL lineto( INT xpos, INT ypos ) = 0;
+	virtual BOOL ellipse( INT Left, INT Top, INT Right, INT Bottom ) = 0;
+	virtual void repaint( void ) = 0;
 };
 
 class memory_device_context_t : public device_context_t
@@ -227,6 +234,8 @@ public:
 	virtual BOOL polypatblt( ULONG Rop, PRECT rect );
 	virtual int getcaps( int index );
         virtual BOOL lineto( INT x, INT y);
+	virtual BOOL ellipse( INT Left, INT Top, INT Right, INT Bottom );
+	virtual void repaint( void );
 };
 
 class window_tt;

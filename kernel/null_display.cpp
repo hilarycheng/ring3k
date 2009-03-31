@@ -51,6 +51,8 @@ public:
 	virtual BOOL polypatblt( ULONG Rop, PRECT rect );
 	virtual int getcaps( int index );
         virtual BOOL lineto( INT x1, INT y1, INT x2, INT y2, pen_t *pen );
+	virtual BOOL ellipse( INT Left, INT Top, INT Right, INT Bottom, pen_t *pen, brush_t *brush );
+        virtual void repaint( void );
 };
 
 BOOL win32k_null_t::init()
@@ -94,8 +96,18 @@ int win32k_null_t::getcaps( int index )
 	return 0;
 }
 
-BOOL win32k_null_t::lineto( INT x1, INT y1, INT x2, INT y2, pen_t *pen ) {
+BOOL win32k_null_t::lineto( INT x1, INT y1, INT x2, INT y2, pen_t *pen )
+{
     return TRUE;
+}
+
+BOOL win32k_null_t::ellipse( INT Left, INT Top, INT Right, INT Bottom, pen_t *pen, brush_t *brush )
+{
+    return TRUE;
+}
+
+void win32k_null_t::repaint( void )
+{
 }
 
 device_context_t* win32k_null_t::alloc_screen_dc_ptr()

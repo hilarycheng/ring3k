@@ -59,6 +59,8 @@ public:
   virtual BOOL polypatblt( ULONG Rop, PRECT rect );
   virtual int getcaps( int index );
   virtual BOOL lineto( INT x, INT y );
+  virtual BOOL ellipse( INT Left, INT Top, INT Right, INT Bottom );
+  virtual void repaint( void );
 };
 
 class win32k_cairo_t : public win32k_manager_t, public sleeper_t
@@ -74,7 +76,9 @@ public:
   virtual BOOL bitblt( INT xDest, INT yDest, INT cx, INT cy, device_context_t *src, INT xSrc, INT ySrc, ULONG rop );
   virtual BOOL polypatblt( ULONG Rop, PRECT rect );
   virtual BOOL lineto( INT x1, INT y1, INT x2, INT y2, pen_t *pen );
+  virtual BOOL ellipse( INT Left, INT Top, INT Right, INT Bottom, pen_t *pen, brush_t *brush );
   virtual device_context_t* alloc_screen_dc_ptr();
+  virtual void repaint( void );
 
 protected:
   virtual bool check_events( bool wait );
@@ -234,10 +238,12 @@ BOOL win32k_cairo_t::set_pixel( INT x, INT y, COLORREF color )
   unsigned int *buf = (unsigned int *) cairo_image_surface_get_data(buffer);
   buf[y * width + x] = color;
 
+  /*
   cairo_save(cr);
   cairo_set_source_surface(cr, buffer, 0, 0);
   cairo_paint(cr);
   cairo_restore(cr);
+  */
 
   return TRUE;
 }
@@ -258,10 +264,12 @@ BOOL win32k_cairo_t::rectangle(INT left, INT top, INT right, INT bottom, brush_t
   cairo_stroke(c);
   cairo_destroy(c);
 
+  /*
   cairo_save(cr);
   cairo_set_source_surface(cr, buffer, 0, 0);
   cairo_paint(cr);
   cairo_restore(cr);
+  */
 
   return TRUE;
 }
@@ -316,10 +324,12 @@ BOOL win32k_cairo_t::bitblt(INT xDest, INT yDest, INT cx, INT cy,
 	}
     }
 
+  /*
   cairo_save(cr);
   cairo_set_source_surface(cr, buffer, 0, 0);
   cairo_paint(cr);
   cairo_restore(cr);
+  */
 
   return TRUE;
 }
@@ -339,10 +349,12 @@ BOOL win32k_cairo_t::polypatblt( ULONG Rop, PRECT rect )
   cairo_fill(c);
   cairo_destroy(c);
 
+  /*
   cairo_save(cr);
   cairo_set_source_surface(cr, buffer, 0, 0);
   cairo_paint(cr);
   cairo_restore(cr);
+  */
 
   return TRUE;
 }
@@ -366,19 +378,71 @@ BOOL win32k_cairo_t::lineto( INT x1, INT y1, INT x2, INT y2, pen_t *pen )
 {
   dprintf("----------- Line To : %d %d %d %d\n", x1, y1, x2, y2);
 
+  COLORREF color = pen->get_color();
+
   cairo_t *c = cairo_create(buffer);
-  cairo_set_source_rgb(c, 1.0, 1.0, 1.0);
+
+  cairo_set_line_width(c, pen->get_width());
+  cairo_set_source_rgb(c,
+		       ((float)GetRValue(color)) / 255.0,
+		       ((float)GetGValue(color)) / 255.0,
+		       ((float)GetBValue(color)) / 255.0);
   cairo_move_to( c, x1, y1 );
   cairo_line_to( c, x2, y2 );
   cairo_stroke( c );
   cairo_destroy(c);
 
+  /*
   cairo_save(cr);
   cairo_set_source_surface(cr, buffer, 0, 0);
   cairo_paint(cr);
   cairo_restore(cr);
+  */
 
   return TRUE;
+}
+
+BOOL win32k_cairo_t::ellipse( INT Left, INT Top, INT Right, INT Bottom, pen_t *pen, brush_t *brush )
+{
+  cairo_t *c = cairo_create(buffer);
+
+  dprintf(" %d %d %d %d\n", Left, Top, Right, Bottom);
+
+  if (pen != NULL) {
+    COLORREF color = pen->get_color();
+    cairo_set_line_width(c, pen->get_width());
+    cairo_set_source_rgb(c,
+			 ((float)GetRValue(color)) / 255.0,
+			 ((float)GetGValue(color)) / 255.0,
+			 ((float)GetBValue(color)) / 255.0);
+  }
+
+  if (brush != NULL) {
+    
+  }
+
+  cairo_arc(c, Left + (Right - Left) / 2, Top + (Bottom - Top) / 2, (Right - Left) / 2, 0.0, 2.0 * M_PI );
+  cairo_stroke( c );
+  cairo_destroy(c);
+
+  /*
+  cairo_save(cr);
+  cairo_set_source_surface(cr, buffer, 0, 0);
+  cairo_paint(cr);
+  cairo_restore(cr);
+  */
+
+  return TRUE;
+}
+
+void win32k_cairo_t::repaint() {
+
+  printf(" Win32k Cairo Repaint \n");
+
+  cairo_save(cr);
+  cairo_set_source_surface(cr, buffer, 0, 0);
+  cairo_paint(cr);
+  cairo_restore(cr);
 }
 
 win32k_cairo_t win32k_manager_cairo;
@@ -399,6 +463,11 @@ BOOL cairo_device_context_t::lineto(INT x, INT y)
       return FALSE;
 
     return win32k_manager->lineto( pt->x, pt->y, x, y, pen );
+}
+
+BOOL cairo_device_context_t::ellipse( INT Left, INT Top, INT Right, INT Bottom )
+{
+  return win32k_manager->ellipse( Left, Top, Right, Bottom, get_selected_pen(), get_selected_brush() );
 }
 
 BOOL cairo_device_context_t::rectangle(INT left, INT top, INT right, INT bottom )
@@ -440,6 +509,11 @@ COLORREF cairo_device_context_t::get_pixel( INT x, INT y )
 int cairo_device_context_t::getcaps( int index )
 {
 	return win32k_manager->getcaps( index );
+}
+
+void cairo_device_context_t::repaint( void )
+{
+  return win32k_manager->repaint();
 }
 
 device_context_t* win32k_cairo_t::alloc_screen_dc_ptr()

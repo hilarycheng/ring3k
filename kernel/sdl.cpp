@@ -62,6 +62,8 @@ public:
 	virtual BOOL polypatblt( ULONG Rop, PRECT rect );
 	virtual int getcaps( int index );
         virtual int lineto( INT x, INT y);
+        virtual BOOL ellipse( INT Left, INT Top, INT Right, INT Bottom );
+	virtual void repaint( void );
 };
 
 class sdl_sleeper_t : public sleeper_t
@@ -94,6 +96,8 @@ public:
 	virtual BOOL bitblt( INT xDest, INT yDest, INT cx, INT cy, device_context_t *src, INT xSrc, INT ySrc, ULONG rop );
 	virtual BOOL polypatblt( ULONG Rop, PRECT rect );
         virtual BOOL lineto( INT x1, INT y1, INT x2, INT y2, pen_t *pen );
+        virtual BOOL ellipse( INT Left, INT Top, INT Right, INT Bottom, pen_t *pen, brush_t *brush );
+        virtual void repaint( void );
 	virtual device_context_t* alloc_screen_dc_ptr();
 
 protected:
@@ -316,6 +320,11 @@ BOOL win32k_sdl_t::lineto( INT x1, INT y1, INT x2, INT y2, pen_t *pen )
     return TRUE;
 }
 
+BOOL win32k_sdl_t::ellipse( INT Left, INT Top, INT Right, INT Bottom, pen_t *pen, brush_t *brush )
+{
+    return TRUE;
+}
+
 sdl_sleeper_t::sdl_sleeper_t( win32k_manager_t* mgr ) :
 	manager( mgr )
 {
@@ -524,6 +533,10 @@ void win32k_sdl_t::fini()
 	SDL_Quit();
 }
 
+void win32k_sdl_t::repaint( void )
+{
+}
+
 class win32k_sdl_16bpp_t : public win32k_sdl_t
 {
 public:
@@ -655,6 +668,11 @@ BOOL sdl_device_context_t::lineto(INT x, INT y)
     return TRUE;
 }
 
+BOOL sdl_device_context_t::ellipse( INT Left, INT Top, INT Right, INT Bottom )
+{
+  return TRUE;
+}
+
 BOOL sdl_device_context_t::rectangle(INT left, INT top, INT right, INT bottom )
 {
 	brush_t *brush = get_selected_brush();
@@ -693,6 +711,10 @@ COLORREF sdl_device_context_t::get_pixel( INT x, INT y )
 int sdl_device_context_t::getcaps( int index )
 {
 	return win32k_manager->getcaps( index );
+}
+
+void sdl_device_context_t::repaint( void )
+{
 }
 
 device_context_t* win32k_sdl_t::alloc_screen_dc_ptr()

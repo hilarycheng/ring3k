@@ -701,6 +701,11 @@ BOOL memory_device_context_t::lineto(INT left, INT top)
     return TRUE;
 }
 
+BOOL memory_device_context_t::ellipse(INT Left, INT Top, INT Right, INT Bottom)
+{
+  return TRUE;
+}
+
 BOOL memory_device_context_t::set_pixel( INT x, INT y, COLORREF color )
 {
 	bitmap_t* bitmap = get_selected_bitmap();
@@ -732,6 +737,10 @@ int memory_device_context_t::getcaps( int index )
 {
 	dprintf("%d\n", index );
 	return 0;
+}
+
+void memory_device_context_t::repaint( void )
+{
 }
 
 brush_t::brush_t( UINT _style, COLORREF _color, ULONG _hatch ) :
@@ -1458,6 +1467,15 @@ BOOLEAN NTAPI NtGdiLineTo( HDC handle, int xpos, int ypos )
 		return FALSE;
 
 	return dc->lineto( xpos, ypos );
+}
+
+BOOLEAN NTAPI NtGdiEllipse( HDC handle, INT Left, INT Top, INT Right, INT Bottom)
+{
+  device_context_t* dc = dc_from_handle( handle );
+  if (!dc)
+    return FALSE;
+
+  return dc->ellipse( Left, Top, Right, Bottom );
 }
 
 int NTAPI NtGdiGetDeviceCaps( HDC handle, int index )

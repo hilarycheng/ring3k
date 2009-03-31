@@ -1049,6 +1049,8 @@ void window_tt::operator delete(void *p)
 
 window_tt::~window_tt()
 {
+        if (win_dc) delete win_dc;
+
 	unlink_window();
 	free_user_handle( handle );
 	dprintf("active window = %p this = %p\n", active_window, this);
@@ -1243,6 +1245,8 @@ window_tt* window_tt::do_create( unicode_string_t& name, unicode_string_t& cls, 
 
 	win->style |= WS_CLIPSIBLINGS;
 
+	win->create_dc();
+	
 	// send WM_CREATE
 	create_message_tt create( cs, cls, name );
 	win->send( create );
@@ -1260,6 +1264,9 @@ window_tt* window_tt::do_create( unicode_string_t& name, unicode_string_t& cls, 
 	return win;
 }
 
+void window_tt::create_dc(void) {
+  win_dc = win32k_manager->alloc_screen_dc_ptr();
+}
 
 window_tt* window_tt::find_window_to_repaint( HWND window, thread_t* thread )
 {
@@ -1366,14 +1373,27 @@ void window_tt::set_window_pos( UINT flags )
 	}
 }
 
+device_context_t *window_tt::get_device_context()
+{
+  return win_dc;
+}
+
 HGDIOBJ window_tt::get_dc()
 {
+  /*
 	device_context_t *dc = win32k_manager->alloc_screen_dc_ptr();
 	if (!dc)
 		return 0;
 
 	dc->set_bounds_rect( rcClient );
 	return dc->get_handle();
+  */
+  if (!win_dc) return 0;
+
+  win_dc->set_bounds_rect( rcClient );
+  win_dc->select();
+  
+  return win_dc->get_handle();
 }
 
 void window_tt::activate()
@@ -1646,6 +1666,29 @@ HDC NTAPI NtUserBeginPaint( HWND Window, PAINTSTRUCT* pps)
 
 BOOLEAN NTAPI NtUserEndPaint( HWND Window, PAINTSTRUCT* pps )
 {
+#if 0
+	window_tt *win = window_from_handle( Window );
+	if (!win)
+		return NULL;
+
+	device_context_t *dc = win32k_manager->alloc_screen_dc_ptr();
+	if (!dc)
+	  return TRUE;
+
+	dc->set_bounds_rect( win->rcClient );
+
+	dc->paint( );
+
+	delete dc;
+#endif
+
+	window_tt *win = window_from_handle( Window );
+	if (!win)
+		return NULL;
+
+	device_context_t *dc = win->get_device_context();
+	dc->repaint( );
+
 	return TRUE;
 }
 
