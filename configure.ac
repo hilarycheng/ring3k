@@ -116,9 +116,13 @@ AC_CONFIG_FILES(
 	tools/Makefile
 	libudis86/Makefile
 	libmspack/Makefile
+	libntreg/Makefile
 	programs/Makefile
 	programs/minitris/Makefile
+	programs/minshell/Makefile
+	programs/pixels/Makefile
 	programs/winemine/Makefile
+	programs/winlogon/Makefile
 	unpack/Makefile
 )
 

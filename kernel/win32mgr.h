@@ -144,6 +144,7 @@ public:
 
 class bitmap_t : public gdi_object_t
 {
+	friend bitmap_t* alloc_bitmap( int width, int height, int depth );
 	static const int magic_val = 0xbb11aa22;
 	int magic;
 protected:
@@ -154,6 +155,8 @@ protected:
 	int bpp;
 protected:
 	void dump();
+	virtual void lock();
+	virtual void unlock();
 public:
 	bitmap_t( int _width, int _height, int _planes, int _bpp );
 	virtual ~bitmap_t();
@@ -178,6 +181,17 @@ public:
 	//virtual BOOL set_pixel( INT x, INT y, COLORREF color );
 };
 
+template<const int DEPTH>
+bitmap_impl_t<DEPTH>::bitmap_impl_t( int _width, int _height ) :
+	bitmap_t( _width, _height, 1, DEPTH )
+{
+}
+
+template<const int DEPTH>
+bitmap_impl_t<DEPTH>::~bitmap_impl_t()
+{
+}
+
 class dc_state_tt
 {
 public:
@@ -199,9 +213,9 @@ public:
 	device_context_t();
 	GDI_DEVICE_CONTEXT_SHARED* get_dc_shared_mem() const;
 	virtual BOOL release();
-	brush_t* get_selected_brush();
-        pen_t* get_selected_pen();	
-	bitmap_t* get_selected_bitmap();
+	virtual brush_t* get_selected_brush();
+	virtual bitmap_t* get_bitmap();
+        virtual pen_t* get_selected_pen();
 	LPPOINT get_current_pen_pos();
 	void set_bounds_rect( RECT& r ) {BoundsRect = r;}
 	RECT& get_bounds_rect() {return BoundsRect;}

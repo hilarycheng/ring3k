@@ -48,12 +48,23 @@
 #if defined (HAVE_SDL) && defined (HAVE_SDL_SDL_H)
 #include <SDL/SDL.h>
 
+class sdl_16bpp_bitmap_t : public bitmap_impl_t<16>
+{
+	SDL_Surface *surface;
+public:
+	sdl_16bpp_bitmap_t( SDL_Surface *s );
+	void lock();
+	void unlock();
+};
+
 class sdl_device_context_t : public device_context_t
 {
 public:
+	bitmap_t *sdl_bitmap;
 	window_tt *win;
 public:
-	sdl_device_context_t();
+	sdl_device_context_t( bitmap_t *b );
+	virtual bitmap_t* get_bitmap();
 	virtual BOOL set_pixel( INT x, INT y, COLORREF color );
 	virtual BOOL rectangle( INT x, INT y, INT width, INT height );
 	virtual BOOL exttextout( INT x, INT y, UINT options,
@@ -64,6 +75,9 @@ public:
         virtual int lineto( INT x, INT y);
         virtual BOOL ellipse( INT Left, INT Top, INT Right, INT Bottom );
 	virtual void repaint( void );
+
+protected:
+	void freetype_bitblt( int x, int y, FT_Bitmap* bitmap );
 };
 
 class sdl_sleeper_t : public sleeper_t
@@ -85,6 +99,7 @@ protected:
 	FT_Library ftlib;
 	FT_Face face;
 	sdl_sleeper_t sdl_sleeper;
+	bitmap_t* sdl_bitmap;
 public:
 	virtual BOOL init();
 	virtual void fini();
@@ -272,7 +287,7 @@ BOOL win32k_sdl_t::bitblt(
 		cy = screen->h - yDest;
 
 	// keep everything on the source bitmap
-	bitmap_t *bitmap = src->get_selected_bitmap();
+	bitmap_t *bitmap = src->get_bitmap();
 	if (!bitmap)
 		return FALSE;
 	xSrc = max( xSrc, 0 );
@@ -322,7 +337,7 @@ BOOL win32k_sdl_t::lineto( INT x1, INT y1, INT x2, INT y2, pen_t *pen )
 
 BOOL win32k_sdl_t::ellipse( INT Left, INT Top, INT Right, INT Bottom, pen_t *pen, brush_t *brush )
 {
-    return TRUE;
+	return TRUE;
 }
 
 sdl_sleeper_t::sdl_sleeper_t( win32k_manager_t* mgr ) :
@@ -520,6 +535,7 @@ BOOL win32k_sdl_t::init()
 	if (r != 0)
 		return FALSE;
 
+	sdl_bitmap = new sdl_16bpp_bitmap_t( screen );
 	::sleeper = &sdl_sleeper;
 
 	return TRUE;
@@ -535,6 +551,25 @@ void win32k_sdl_t::fini()
 
 void win32k_sdl_t::repaint( void )
 {
+}
+
+sdl_16bpp_bitmap_t::sdl_16bpp_bitmap_t( SDL_Surface *s ) :
+	bitmap_impl_t<16>( s->w, s->h ),
+	surface( s )
+{
+	bits = reinterpret_cast<unsigned char*>( s->pixels );
+}
+
+void sdl_16bpp_bitmap_t::lock()
+{
+	if ( SDL_MUSTLOCK(surface) )
+		SDL_LockSurface(surface);
+}
+
+void sdl_16bpp_bitmap_t::unlock()
+{
+	if ( SDL_MUSTLOCK(surface) )
+		SDL_UnlockSurface(surface);
 }
 
 class win32k_sdl_16bpp_t : public win32k_sdl_t
@@ -687,9 +722,15 @@ BOOL sdl_device_context_t::polypatblt( ULONG Rop, PRECT rect )
 	return win32k_manager->polypatblt( Rop, rect );
 }
 
-sdl_device_context_t::sdl_device_context_t() :
+sdl_device_context_t::sdl_device_context_t( bitmap_t *b ) :
+	sdl_bitmap( b ),
 	win( 0 )
 {
+}
+
+bitmap_t* sdl_device_context_t::get_bitmap()
+{
+	return sdl_bitmap;
 }
 
 BOOL sdl_device_context_t::set_pixel( INT x, INT y, COLORREF color )
@@ -719,7 +760,7 @@ void sdl_device_context_t::repaint( void )
 
 device_context_t* win32k_sdl_t::alloc_screen_dc_ptr()
 {
-	return new sdl_device_context_t;
+	return new sdl_device_context_t( sdl_bitmap );
 }
 
 #else

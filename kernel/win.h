@@ -80,6 +80,7 @@ public:
 	void unlink_window();
 	BOOLEAN move_window( int x, int y, int width, int height, BOOLEAN repaint );
 	HWND from_point( POINT& pt );
+	bool on_access( BYTE* address, ULONG ip );
 
 private:
 	device_context_t *win_dc;
